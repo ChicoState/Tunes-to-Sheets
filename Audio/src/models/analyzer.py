@@ -32,15 +32,18 @@ def extract_audio_features(audiofile: str) -> tuple:
 
 	#Preprocess audio (preprocessing improves pitch detection)
 	audio_clean = preprocess_audio(audio)
-
+	
 	# Extract pitch values and confidence.
 	pitch_extractor = es.PredominantPitchMelodia(
 		frameSize=2048, #inc from 1512 for better freq reso 
 		hopSize=128, #dec from 64 for better temporal reso 
-		minDuration=.1, #dec from 3 secs  
+		minFrequency=55, # lowest note A1
+		maxFrequency=1760, # highest note A6
+		minDuration=.1, #dec from 3 secs
+		timeContinuity=100, # added for better pitch continuity
 		voicingTolerance=0.6 #inc from .2 for better voice dectection
 	)
-	pitch_values, pitch_confidence = pitch_extractor(audio)
+	pitch_values, pitch_confidence = pitch_extractor(audio_clean)
 	onsets, durations, notes = es.PitchContourSegmentation(hopSize=50)(pitch_values, audio)
 
 	# Extract rhythm features.
