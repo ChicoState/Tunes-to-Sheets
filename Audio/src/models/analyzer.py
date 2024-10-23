@@ -2,10 +2,27 @@ from pathlib import Path
 import essentia.standard as es
 import mido
 import os
+import numpy as np
 
 PPQ = 96 # Pulses per quarter note.
 OUTPUT_DIRECTORY = "/public/midi/"
 INPUT_DIRECTORY = "/public/audio/"
+
+# Preprocessing improves pitch detection
+def preprocess_audio(audio, sample_rate=44100):
+    # Apply equal-loudness filter
+    equal_loudness = es.EqualLoudness(sampleRate=sample_rate)
+    audio_eq = equal_loudness(audio)
+    
+    # Remove DC offset
+    dc_filter = es.DCRemoval(sampleRate=sample_rate)
+    audio_dc = dc_filter(audio_eq)
+    
+    # Apply noise gate to reduce background noise
+    noise_gate = es.NoiseGate(sampleRate=sample_rate, threshold=-60)
+    audio_clean = noise_gate(audio_dc)
+    
+    return audio_clean
 
 # Returns audio features as ordered tuple (notes, onsets, durations, silence durations)
 def extract_audio_features(audiofile: str) -> tuple:
@@ -13,8 +30,16 @@ def extract_audio_features(audiofile: str) -> tuple:
 	loader = es.EqloudLoader(filename=audiofile, sampleRate=44100)
 	audio = loader()
 
+	#Preprocess audio (preprocessing improves pitch detection)
+	audio_clean = preprocess_audio(audio)
+
 	# Extract pitch values and confidence.
-	pitch_extractor = es.PredominantPitchMelodia(frameSize=1512, hopSize=64, minDuration=3, voicingTolerance=0.2)
+	pitch_extractor = es.PredominantPitchMelodia(
+		frameSize=2048, #inc from 1512 for better freq reso 
+		hopSize=128, #dec from 64 for better temporal reso 
+		minDuration=.1, #dec from 3 secs  
+		voicingTolerance=0.6 #inc from .2 for better voice dectection
+	)
 	pitch_values, pitch_confidence = pitch_extractor(audio)
 	onsets, durations, notes = es.PitchContourSegmentation(hopSize=50)(pitch_values, audio)
 
