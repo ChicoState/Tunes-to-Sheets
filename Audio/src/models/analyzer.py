@@ -24,6 +24,25 @@ def preprocess_audio(audio, sample_rate=44100):
     
     return audio_clean
 
+# Smooth pitch contour and remove low-confidence values
+def smooth_pitch_contour(pitch_values, confidence_values, confidence_threshold=0.8):
+	# Remove low-confidence pitch values
+	pitch_values[confidence_values < confidence_threshold] = 0
+
+	# Apply median filter to remove spurious jumps
+	window_size = 5
+	pitch_values = np.pad(pitch_values, (window_size//2, window_size//2), mode='edge')
+	smoothed_pitch = np.zeros_like(pitch_values)
+
+	for i in range(window_size)(window_size//2, len(pitch_values) - window_size//2):
+		window = pitch_values[i-window_size//2:i+window_size//2+1]
+		# Consider only 0 values for median
+		valid_values = window[window != 0]
+		if len(valid_values) > 0:
+			smoothed_pitch[i] = np.median(valid_values)
+		
+	return smoothed_pitch[window_size//2:-window_size//2]
+
 # Returns audio features as ordered tuple (notes, onsets, durations, silence durations)
 def extract_audio_features(audiofile: str) -> tuple:
 	# Load audio file.
@@ -44,6 +63,11 @@ def extract_audio_features(audiofile: str) -> tuple:
 		voicingTolerance=0.6 #inc from .2 for better voice dectection
 	)
 	pitch_values, pitch_confidence = pitch_extractor(audio_clean)
+
+	# Smooth pith contour
+	smoothed_pitch = smooth_pitch_contour(pitch_values, pitch_confidence)
+
+	# Segmentation parameters
 	onsets, durations, notes = es.PitchContourSegmentation(hopSize=50)(pitch_values, audio)
 
 	# Extract rhythm features.
