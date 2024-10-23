@@ -58,7 +58,7 @@ def extract_audio_features(audiofile: str) -> tuple:
 		hopSize=128, #dec from 64 for better temporal reso 
 		minFrequency=55, # lowest note A1
 		maxFrequency=1760, # highest note A6
-		minDuration=.1, #dec from 3 secs
+		minDuration=0.1, #dec from 3 secs
 		timeContinuity=100, # added for better pitch continuity
 		voicingTolerance=0.6 #inc from .2 for better voice dectection
 	)
@@ -68,7 +68,12 @@ def extract_audio_features(audiofile: str) -> tuple:
 	smoothed_pitch = smooth_pitch_contour(pitch_values, pitch_confidence)
 
 	# Segmentation parameters
-	onsets, durations, notes = es.PitchContourSegmentation(hopSize=50)(pitch_values, audio)
+	onsets, durations, notes = es.PitchContourSegmentation(
+		hopSize=128,
+		minDuration=0.1,
+		tuningFrequency=440,
+		pitchDistanceThreshold=60 #threshold for pitch change detection
+		)(smoothed_pitch, audio_clean)
 
 	# Extract rhythm features.
 	audio = es.MonoLoader(filename=audiofile, sampleRate=44100)()
