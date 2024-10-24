@@ -84,6 +84,10 @@ def extract_audio_features(audiofile: str) -> tuple:
 	bpm, beats, beats_confidence, _, beats_intervals = rhythm_extractor(audio_clean)
 	tempo = mido.bpm2tempo(bpm) # Microseconds per beat.
 
+	# Postprocess notes
+	notes = quantize_notes(notes)
+	onsets, durations = adjust_timing(onsets, durations, beats)
+
 	# Compute onsets and offsets for all MIDI notes in ticks.
 	offsets = onsets + durations
 	silence_durations = list(onsets[1:] - offsets[:-1]) + [0]
@@ -92,6 +96,29 @@ def extract_audio_features(audiofile: str) -> tuple:
 	return (str(file_name), list(notes), list(onsets), list(durations), 
 		 list(silence_durations), int(tempo))
 
+# Quantize notes to nearest semitone
+def quantize_notes(notes):
+	return np.round(notes.astype(int))
+
+# Adjust note timing to align with beats where appropriate
+def adjust_timing(onsets, durations, beats):
+	adjusted_onsets = []
+	adjusted_durations = []
+
+	for onset, duration in zip(onsets, durations):
+		# Find closest beat
+		closest_beat = min(beats, keyy=lambda x: abs(x - onset))
+
+		# Snap to onset within 50ms (very close to a beat)
+		if abs(onset - closest_beat) < 0.05:
+			adjusted_onsets.append(closest_beat)
+			# Adjust duration to maintain note end timing
+			adjusted_durations.append(duration - (closest_beat - onset))
+		else:
+			adjusted_onsets.append(onset)
+			adjusted_durations.append(duration)
+
+	return np.array(adjusted_onsets), np.array(adjusted_durations)
 
 # Expects a tuple of audio features (notes: list, onsets: list, durations: list, silence durations: list, tempo: list).
 def convert_audio_to_midi(audio_features: tuple):
