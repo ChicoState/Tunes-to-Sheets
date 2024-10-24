@@ -76,9 +76,12 @@ def extract_audio_features(audiofile: str) -> tuple:
 		)(smoothed_pitch, audio_clean)
 
 	# Extract rhythm features.
-	audio = es.MonoLoader(filename=audiofile, sampleRate=44100)()
-	rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
-	bpm, beats, beats_confidence, _, beats_intervals = rhythm_extractor(audio)
+	rhythm_extractor = es.RhythmExtractor2013(
+		method="multifeature", 
+		maxTempo=208, 
+		minTempo=40,
+	)
+	bpm, beats, beats_confidence, _, beats_intervals = rhythm_extractor(audio_clean)
 	tempo = mido.bpm2tempo(bpm) # Microseconds per beat.
 
 	# Compute onsets and offsets for all MIDI notes in ticks.
@@ -86,7 +89,8 @@ def extract_audio_features(audiofile: str) -> tuple:
 	silence_durations = list(onsets[1:] - offsets[:-1]) + [0]
 
 	file_name = Path(audiofile).stem
-	return (str(file_name), list(notes), list(onsets), list(durations), list(silence_durations), int(tempo))
+	return (str(file_name), list(notes), list(onsets), list(durations), 
+		 list(silence_durations), int(tempo))
 
 
 # Expects a tuple of audio features (notes: list, onsets: list, durations: list, silence durations: list, tempo: list).
