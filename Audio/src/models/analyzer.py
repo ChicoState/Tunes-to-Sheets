@@ -1,152 +1,77 @@
 from pathlib import Path
-import essentia.standard as es
-import mido
-import os
+import librosa
 import numpy as np
+import pretty_midi as pm
+import os
 
 PPQ = 96 # Pulses per quarter note.
-OUTPUT_DIRECTORY = "/public/midi/"
-INPUT_DIRECTORY = "/public/audio/"
+OUTPUT_DIRECTORY = "/Audio/public/midi/"
+INPUT_DIRECTORY = "/Audio/public/audio/"
 
-# Preprocessing improves pitch detection
-def preprocess_audio(audio, sample_rate=44100):
-    # Apply equal-loudness filter
-    equal_loudness = es.EqualLoudness(sampleRate=sample_rate)
-    audio_eq = equal_loudness(audio)
-    
-    # Remove DC offset
-    dc_filter = es.DCRemoval(sampleRate=sample_rate)
-    audio_dc = dc_filter(audio_eq)
-    
-    # Apply noise gate to reduce background noise
-    noise_gate = es.NoiseGate(sampleRate=sample_rate, threshold=-60)
-    audio_clean = noise_gate(audio_dc)
-    
-    return audio_clean
+def freq_to_midi(freq: float) -> int:
+    return int(12 * (np.log(freq / 220.0) / np.log(2.0)) + 57)
 
-# Smooth pitch contour and remove low-confidence values
-def smooth_pitch_contour(pitch_values, confidence_values, confidence_threshold=0.8):
-	# Remove low-confidence pitch values
-	pitch_values[confidence_values < confidence_threshold] = 0
-
-	# Apply median filter to remove spurious jumps
-	window_size = 5
-	pitch_values = np.pad(pitch_values, (window_size//2, window_size//2), mode='edge')
-	smoothed_pitch = np.zeros_like(pitch_values)
-
-	for i in range(window_size)(window_size//2, len(pitch_values) - window_size//2):
-		window = pitch_values[i-window_size//2:i+window_size//2+1]
-		# Consider only 0 values for median
-		valid_values = window[window != 0]
-		if len(valid_values) > 0:
-			smoothed_pitch[i] = np.median(valid_values)
-		
-	return smoothed_pitch[window_size//2:-window_size//2]
 
 # Returns audio features as ordered tuple (notes, onsets, durations, silence durations)
 def extract_audio_features(audiofile: str) -> tuple:
-	# Load audio file.
-	loader = es.EqloudLoader(filename=audiofile, sampleRate=44100)
-	audio = loader()
-
-	#Preprocess audio (preprocessing improves pitch detection)
-	audio_clean = preprocess_audio(audio)
+	# Loading the audio file 
+	audio_file = '/home/koris/Tunes-to-Sheets/Audio/public/audio/testfile.mp3'
+	y, sr = librosa.load(audio_file)
 	
-	# Extract pitch values and confidence.
-	pitch_extractor = es.PredominantPitchMelodia(
-		frameSize=2048, #inc from 1512 for better freq reso 
-		hopSize=128, #dec from 64 for better temporal reso 
-		minFrequency=55, # lowest note A1
-		maxFrequency=1760, # highest note A6
-		minDuration=0.1, #dec from 3 secs
-		timeContinuity=100, # added for better pitch continuity
-		voicingTolerance=0.6 #inc from .2 for better voice dectection
-	)
-	pitch_values, pitch_confidence = pitch_extractor(audio_clean)
+ 
+	# Extracting the chroma features and onsets 
+	chroma = librosa.stft(y)
+	onset_frames = librosa.onset.onset_detect(y=y, sr=sr)
 
-	# Smooth pith contour
-	smoothed_pitch = smooth_pitch_contour(pitch_values, pitch_confidence)
+	S = np.abs(chroma)
+	pitches, magnitudes = librosa.piptrack(S=S, sr=sr)
+	exact_pitches = []
+	exact_time = []
+	exact_durations	= []
 
-	# Segmentation parameters
-	onsets, durations, notes = es.PitchContourSegmentation(
-		hopSize=128,
-		minDuration=0.1,
-		tuningFrequency=440,
-		pitchDistanceThreshold=60 #threshold for pitch change detection
-		)(smoothed_pitch, audio_clean)
+	for onset_frame in onset_frames:
+		max_index = np.argmax(magnitudes[:, onset_frame])
+		pitches_at_onset = pitches[max_index, onset_frame]
+		duration = librosa.frames_to_time(onset_frame + 1, sr=sr) - librosa.frames_to_time(onset_frame, sr=sr)
+		time = librosa.frames_to_time(onset_frame, sr=sr)
 
-	# Extract rhythm features.
-	rhythm_extractor = es.RhythmExtractor2013(
-		method="multifeature", 
-		maxTempo=208, 
-		minTempo=40,
-	)
-	bpm, beats, beats_confidence, _, beats_intervals = rhythm_extractor(audio_clean)
-	tempo = mido.bpm2tempo(bpm) # Microseconds per beat.
+		exact_pitches.append(freq_to_midi(pitches_at_onset))
+		
+		exact_time.append(time)
+		exact_durations.append(duration)
 
-	# Postprocess notes
-	notes = quantize_notes(notes)
-	onsets, durations = adjust_timing(onsets, durations, beats)
-
-	# Compute onsets and offsets for all MIDI notes in ticks.
-	offsets = onsets + durations
-	silence_durations = list(onsets[1:] - offsets[:-1]) + [0]
-
+ 
 	file_name = Path(audiofile).stem
-	return (str(file_name), list(notes), list(onsets), list(durations), 
-		 list(silence_durations), int(tempo))
+	return (str(file_name), list(exact_pitches), list(exact_time), list(exact_durations))
 
-# Quantize notes to nearest semitone
-def quantize_notes(notes):
-	return np.round(notes.astype(int))
-
-# Adjust note timing to align with beats where appropriate
-def adjust_timing(onsets, durations, beats):
-	adjusted_onsets = []
-	adjusted_durations = []
-
-	for onset, duration in zip(onsets, durations):
-		# Find closest beat
-		closest_beat = min(beats, keyy=lambda x: abs(x - onset))
-
-		# Snap to onset within 50ms (very close to a beat)
-		if abs(onset - closest_beat) < 0.05:
-			adjusted_onsets.append(closest_beat)
-			# Adjust duration to maintain note end timing
-			adjusted_durations.append(duration - (closest_beat - onset))
-		else:
-			adjusted_onsets.append(onset)
-			adjusted_durations.append(duration)
-
-	return np.array(adjusted_onsets), np.array(adjusted_durations)
 
 # Expects a tuple of audio features (notes: list, onsets: list, durations: list, silence durations: list, tempo: list).
 def convert_audio_to_midi(audio_features: tuple):
 	# Detect errors in audio features tuple.
 	match audio_features:
-		case (str(file_name), list(notes), list(onsets), list(durations), list(silence_durations), int(tempo)):
-			if (len(notes) == len(onsets) == len(durations) == len(silence_durations)):
+		case (str(file_name), list(notes), list(onsets), list(durations)):
+			if (len(notes) == len(onsets) == len(durations)):
 				pass
 			else:
 				raise ValueError("Features tuple must all same length")
 		case _:
 			raise ValueError("Invalid audio features tuple")
 		
-	file_name, notes, onsets, durations, silence_durations, tempo = audio_features
+	file_name, notes, onsets, durations = audio_features
 	
-	# Initialize midi file
-	mid = mido.MidiFile()
-	track = mido.MidiTrack()
-	mid.tracks.append(track)
-	print("onsets: ", onsets)
-	print("durations: ", durations)	
-
+	midi_mapping = pm.PrettyMIDI()
+	inst_program = pm.instrument_name_to_program("Cello") # TODO: Find better program instrument in pretty-midi
+	instrument = pm.Instrument(program=inst_program, is_drum=False, name='Cello')
+	
 	# Convert features to MIDI data
-	for note, onset, duration, silence_duration in zip(list(notes), list(onsets), list(durations), silence_durations): 
-		track.append(mido.Message('note_on', note=int(note), velocity=64,
-								  time=int(mido.second2tick(onset, PPQ, tempo))))
-		track.append(mido.Message('note_off', note=int(note),
-								  time=int(mido.second2tick(onset + duration, PPQ, tempo))))
-
+	for note, onset, duration in zip(list(notes), list(onsets), list(durations)):
+		new_note = pm.Note(velocity=100, pitch=int(note), start=onset, end=onset+duration)
+		instrument.notes.append(new_note)
+  
+	midi_mapping.instruments.append(instrument)
+	
 	current_directory = os.getcwd()
-	mid.save(current_directory + OUTPUT_DIRECTORY + file_name + ".mid")
+ 
+	output_dir = current_directory + OUTPUT_DIRECTORY + file_name + ".mid"
+	midi_mapping.write(output_dir)
+	
