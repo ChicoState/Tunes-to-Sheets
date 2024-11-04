@@ -4,8 +4,9 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="src/style.css">
-    <link rel="stylesheet" href="src/app.css">
+    <!-- <link rel="stylesheet" href="src/style.css"> -->
+    <!-- <link rel="stylesheet" href="src/app.css"> -->
+    <link rel="stylesheet" href="src/main.css">
     <title>Vite App</title>
     <script type="module" src="main.js" defer></script>
     <script type="module" src="src/firebase-auth.js" defer></script>
@@ -13,11 +14,13 @@
   </head>
   <body>
     <div id="app">
+
+      
     
     
-      <div class="container">
+      <!-- <div class="container">
         <div class="logo">
-          <h1>🎶 Tunes-to-Shreds 🎶</h1>
+          <h1>🎶 Tunes-to-Sheets 🎶</h1>
         </div>
         <form class="login-form">
           <label for="username">Username</label>
@@ -31,7 +34,143 @@
             <button type="button" class="signup-btn">Sign Up</button>
           </div>
         </form>
+      </div> -->
+
+
+      <!-- Header -->
+      <header class="header">
+        <div class="logo">🎶 Tunes-to-Sheets 🎶</div>
+        <nav class="nav">
+          <ul class="nav-menu">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="#login" class="login-btn">Login</a></li>
+          </ul>
+          <div class="hamburger-menu">☰</div>
+        </nav>
+      </header>
+
+
+      <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div class="container">
+                <div class="logo">
+                    <h1>🎶 Tunes-to-Sheets 🎶</h1>
+                </div>
+                <form class="login-form">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Enter your Email" required>
+            
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            
+                    <div class="buttons">
+                        <button type="submit" class="login-btn">Login</button>
+                        <button type="button" class="signup-btn">Sign Up</button>
+                    </div>
+                </form>
+            </div>
+        </div>
       </div>
+
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="hero-content">
+          <h1>Transform Your Tunes into Sheet Music Instantly</h1>
+          <p>Upload your audio and get high-quality sheet music for piano, guitar, or both.</p>
+          <div class="hero-cta">
+            <button class="cta-btn">Get Started</button>
+            <button class="cta-btn secondary">Learn More</button>
+          </div>
+        </div>
+        <div class="hero-image">
+          <img src="public/mp3-vers-partitions-pdf-design.png.webp" alt="Audio to sheet music illustration">
+        </div>
+      </section>
+
+
+      <section id="how-it-works" class="how-it-works">
+        <h2>How It Works</h2>
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-icon">🎵</div>
+                <h3>1. Upload Your Audio</h3>
+                <p>Simply upload your audio file in MP3 or WAV format.</p>
+            </div>
+            <div class="step">
+                <div class="step-icon">⚙️</div>
+                <h3>2. Processing & Conversion</h3>
+                <p>Our advanced algorithm converts your audio into high-quality sheet music.</p>
+            </div>
+            <div class="step">
+                <div class="step-icon">🎼</div>
+                <h3>3. Download Your Sheet Music</h3>
+                <p>Receive your sheet music instantly, available for piano, guitar, or both.</p>
+            </div>
+        </div>
+    </section>
+    
+    <section id="features" class="features">
+      <h2>Features</h2>
+      <div class="features-container">
+        <div class="feature-item">
+          <div class="feature-icon">🎼</div>
+          <h3>High-Quality Conversion</h3>
+          <p>Convert audio to sheet music with precision and detail.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🎹</div>
+          <h3>Multi-Instrument Support</h3>
+          <p>Get sheet music for piano, guitar, or both.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔄</div>
+          <h3>Quick Processing</h3>
+          <p>Enjoy fast results with minimal waiting time.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🗂️</div>
+          <h3>Track Your Files</h3>
+          <p>Log in to see and manage your previously uploaded files.</p>
+        </div>
+      </div>
+    </section>
+  
+
+    <section id="about" class="about">
+      <h2>About Tunes-to-Sheets</h2>
+      <div class="about-content">
+          <div class="about-text">
+              <p>Tunes-to-Sheets was built with the mission of making music transcription easy and accessible for everyone. Whether you’re a musician wanting to play a new tune or a teacher creating resources for students, our platform is designed to save you time and effort.</p>
+              <p>We are passionate about providing accurate, high-quality sheet music to help you bring your music to life, no matter your instrument of choice.</p>
+          </div>
+          <div class="about-image">
+              <img src="public/mp3-audio-converter-thumbnail.png" alt="About Tunes-to-Sheets">
+          </div>
+      </div>
+  </section>
+
+
+  <footer class="footer">
+    <div class="footer-content">
+        <div class="footer-logo">🎶 Tunes-to-Sheets 🎶</div>
+        <p>&copy; 2024 Tunes-to-Sheets. All rights reserved.</p>
+        <nav class="footer-nav">
+            <ul class="footer-menu">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </div>
+</footer>
+
     
     
     </div>
