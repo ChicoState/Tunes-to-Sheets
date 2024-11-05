@@ -1,53 +1,54 @@
 from pathlib import Path
-import librosa
-import numpy as np
 import pretty_midi as pm
+import numpy as np
+import librosa
 import os
 
 PPQ = 96 # Pulses per quarter note.
 OUTPUT_DIRECTORY = "/Audio/public/midi/"
 INPUT_DIRECTORY = "/Audio/public/audio/"
 
+
 def freq_to_midi(freq: float) -> int:
-    return int(12 * (np.log(freq / 220.0) / np.log(2.0)) + 57)
+	return int(12 * (np.log(freq / 220.0) / np.log(2.0)) + 57) # Treat this as black magic
 
 
 # Returns audio features as ordered tuple (notes, onsets, durations, silence durations)
 def extract_audio_features(audiofile: str) -> tuple:
-	# Loading the audio file 
 	audio_file = '/home/koris/Tunes-to-Sheets/Audio/public/audio/testfile.mp3'
 	y, sr = librosa.load(audio_file)
-	
  
 	# Extracting the chroma features and onsets 
 	chroma = librosa.stft(y)
 	onset_frames = librosa.onset.onset_detect(y=y, sr=sr)
-
 	S = np.abs(chroma)
 	pitches, magnitudes = librosa.piptrack(S=S, sr=sr)
-	exact_pitches = []
-	exact_time = []
-	exact_durations	= []
+	onset_pitches = []
+	onset_times = []
+	durations	= []
 
+	# Calculate onset times and midi note at that time
 	for onset_frame in onset_frames:
 		max_index = np.argmax(magnitudes[:, onset_frame])
 		pitches_at_onset = pitches[max_index, onset_frame]
-		duration = librosa.frames_to_time(onset_frame + 1, sr=sr) - librosa.frames_to_time(onset_frame, sr=sr)
 		time = librosa.frames_to_time(onset_frame, sr=sr)
+		onset_pitches.append(freq_to_midi(pitches_at_onset))
+		onset_times.append(time)
 
-		exact_pitches.append(freq_to_midi(pitches_at_onset))
-		
-		exact_time.append(time)
-		exact_durations.append(duration)
-
+	# Compute durations (hacky, just computed as difference to next onset)
+	last_onset = onset_times[0]
+	for onset_time in onset_times[1:]:
+		durations.append(onset_time - last_onset)
+		last_onset = onset_time
+	last_onset = onset_times[-1]
+	durations.append(librosa.get_duration(y=y, sr=sr) - last_onset)
  
 	file_name = Path(audiofile).stem
-	return (str(file_name), list(exact_pitches), list(exact_time), list(exact_durations))
+	return (str(file_name), list(onset_pitches), list(onset_times), list(durations))
 
 
 # Expects a tuple of audio features (notes: list, onsets: list, durations: list, silence durations: list, tempo: list).
 def convert_audio_to_midi(audio_features: tuple):
-	# Detect errors in audio features tuple.
 	match audio_features:
 		case (str(file_name), list(notes), list(onsets), list(durations)):
 			if (len(notes) == len(onsets) == len(durations)):
@@ -65,13 +66,11 @@ def convert_audio_to_midi(audio_features: tuple):
 	
 	# Convert features to MIDI data
 	for note, onset, duration in zip(list(notes), list(onsets), list(durations)):
-		new_note = pm.Note(velocity=100, pitch=int(note), start=onset, end=onset+duration)
+		new_note = pm.Note(velocity=100, pitch=int(note), start=onset, end=onset + duration)
 		instrument.notes.append(new_note)
   
 	midi_mapping.instruments.append(instrument)
-	
 	current_directory = os.getcwd()
  
 	output_dir = current_directory + OUTPUT_DIRECTORY + file_name + ".mid"
 	midi_mapping.write(output_dir)
-	
