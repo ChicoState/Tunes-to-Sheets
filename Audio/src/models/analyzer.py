@@ -5,18 +5,14 @@ import librosa
 import os
 
 PPQ = 96 # Pulses per quarter note.
-OUTPUT_DIRECTORY = "/Audio/public/midi/"
-INPUT_DIRECTORY = "/Audio/public/audio/"
-
 
 def freq_to_midi(freq: float) -> int:
 	return int(12 * (np.log(freq / 220.0) / np.log(2.0)) + 57) # Treat this as black magic
 
 
 # Returns audio features as ordered tuple (notes, onsets, durations, silence durations)
-def extract_audio_features(audiofile: str) -> tuple:
-	audio_file = '/home/koris/Tunes-to-Sheets/Audio/public/audio/testfile.mp3'
-	y, sr = librosa.load(audio_file)
+def extract_audio_features(absolute_audio_file_path: str) -> tuple:
+	y, sr = librosa.load(absolute_audio_file_path)
  
 	# Extracting the chroma features and onsets 
 	chroma = librosa.stft(y)
@@ -43,12 +39,12 @@ def extract_audio_features(audiofile: str) -> tuple:
 	last_onset = onset_times[-1]
 	durations.append(librosa.get_duration(y=y, sr=sr) - last_onset)
  
-	file_name = Path(audiofile).stem
+	file_name = Path(absolute_audio_file_path).stem
 	return (str(file_name), list(onset_pitches), list(onset_times), list(durations))
 
 
 # Expects a tuple of audio features (notes: list, onsets: list, durations: list, silence durations: list, tempo: list).
-def convert_audio_to_midi(audio_features: tuple):
+def generate_midi_from_audio(audio_features: tuple, absolute_output_directory: str):
 	match audio_features:
 		case (str(file_name), list(notes), list(onsets), list(durations)):
 			if (len(notes) == len(onsets) == len(durations)):
@@ -59,10 +55,10 @@ def convert_audio_to_midi(audio_features: tuple):
 			raise ValueError("Invalid audio features tuple")
 		
 	file_name, notes, onsets, durations = audio_features
-	
+ 
 	midi_mapping = pm.PrettyMIDI()
-	inst_program = pm.instrument_name_to_program("Cello") # TODO: Find better program instrument in pretty-midi
-	instrument = pm.Instrument(program=inst_program, is_drum=False, name='Cello')
+	inst_program = pm.instrument_name_to_program("Acoustic Grand Piano") # TODO: Find better program instrument in pretty-midi
+	instrument = pm.Instrument(program=inst_program, is_drum=False, name='')
 	
 	# Convert features to MIDI data
 	for note, onset, duration in zip(list(notes), list(onsets), list(durations)):
@@ -70,7 +66,9 @@ def convert_audio_to_midi(audio_features: tuple):
 		instrument.notes.append(new_note)
   
 	midi_mapping.instruments.append(instrument)
-	current_directory = os.getcwd()
- 
-	output_dir = current_directory + OUTPUT_DIRECTORY + file_name + ".mid"
-	midi_mapping.write(output_dir)
+	
+	try:	  
+		output_dir = absolute_output_directory
+		midi_mapping.write(output_dir)
+	except Exception as e:
+		raise Exception("Error generating MIDI file: " + str(e))
