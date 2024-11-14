@@ -24,6 +24,4 @@ def generate_sheet_from_audio(audio_file_name: str):
 		os.makedirs(pdf_path.parent.absolute())
 	
 	an.generate_midi_from_audio(an.extract_audio_features(str(audio_path.absolute())), str(midi_path.absolute()))
-	#sg.generate_sheet(str(midi_path.absolute()), str(pdf_path.absolute()))
-
-generate_sheet_from_audio("testfile.mp3")
+	sg.generate_sheet(str(midi_path.absolute()), str(pdf_path.absolute()))
