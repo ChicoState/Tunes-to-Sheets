@@ -1,7 +1,7 @@
 import os
 import sys
 
-if not os.getcwd().endswith("app") or os.getcwd().endswith("Audio"):
+if not os.getcwd().endswith("app") and not os.getcwd().endswith("Audio"):
     raise Exception("Script must be run from /Audio/ or /app/")
 sys.path.append(os.getcwd())
 
