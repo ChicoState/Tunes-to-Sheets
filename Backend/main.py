@@ -1,64 +1,54 @@
-#File Service Backend part CSCI 430
-#Carlos Flores Rivera
-from typing import Annotated
+#File Service Backend
 #Import the necessary libraries of fastapi, file import
 from fastapi import FastAPI, File, UploadFile, Depends, status, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.templating import Jinja2Templates #Template library for HTML portion
-from fastapi.staticfiles import StaticFiles #Static Files [need a static directory]
-#File processing
-from pydub import AudioSegment 
+#Library for the communication between ports
+from fastapi.middleware.cors import CORSMiddleware
 import os
-from tempfile import NamedTemporaryFile #Used to create temporary files
-#AudiotoSheet generator [In progress]
-import librosa
-import numpy as np
-from music21 import stream, note, meter, key
+from typing import List
 
-#Create path to put output files
+#Activates instance and set up format using FastAPI
+app = FastAPI()
+
+#Create path to put output files in Backend Directory[Changed later]
 output_path = os.path.join(os.getcwd(), "output_directory")
 if not os.path.exists(output_path):
     os.makedirs(output_path)  #Create the directory if it doesn't exist
 
-#Activates instance and set up format using FastAPI
-app = FastAPI()
-templates = Jinja2Templates(directory="templates")#Set up Jinja2 templates [for bootstrap template]
-#Mount static files for JavaScript and CSS (if needed)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+#CORS middle ware since running on different ports
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173","http://127.0.0.1:5173",],  #port related that accepts requests and posts
+    allow_credentials=True,# * allows all 
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-#Homepage with upload form using the template of Jinja2 [HOW IT LOOKS]
-@app.get("/", response_class=HTMLResponse)
-async def main(request: Request):
-    return templates.TemplateResponse("upload.html", {"request": request}) #Uses the template from upload.html
+#Handling multiple file upload
+@app.post("/upload/")
+async def upload_files(files: List[UploadFile] = File(...)):
+    filenames = []#Array for multiple files
+    max_size = 10 * 1024 * 1024  # 10MB limit
+    allowed_types = ['audio/mpeg','audio/mp4', 'audio/wav', 'audio/midi']  #mpeg/MP3, MP4(audio only), WAV, and MIDI files allowed
 
-#Converting the mp3 file to wav
-def MP3_to_WAV(mp3_file, wav_file_name):
-    audio = AudioSegment.from_mp3(mp3_file)
-    audio.export(wav_file_name, format="wav")
-    return wav_file_name
+    try:
+        for file in files:
+            #FileTypes allowed [Unit testing] 
+            if file.content_type not in allowed_types:
+                raise HTTPException(status_code=400, detail=f"Invalid file type: {file.filename}. Only MP3, WAV, and MIDI files are allowed.")
 
-#Handling file upload [ACTION CREATED WHEN PRESSED]
-@app.post("/uploadfile/")
-async def upload_file(request: Request, file: UploadFile = File(...)):#Specify the form data, body of file
-    with NamedTemporaryFile(delete=False, suffix=".mp3") as temp_mp3: #use a temp file to hold upload
-        temp_mp3.write(await file.read())
-        temp_mp3_path = temp_mp3.name
-    wav_file_name = os.path.join(output_path, f"{os.path.basename(temp_mp3_path).replace('.mp3', '.wav')}")#Changes the formate of the temp_file
-    wav_file_path = MP3_to_WAV(temp_mp3_path, wav_file_name)#Call function for conversion
-    # After exporting the WAV file check if converted right [Error checking]
-    if os.path.exists(wav_file_path):
-        print(f"WAV file created successfully at: {wav_file_path}")
-        return templates.TemplateResponse("upload.html", {
-            "request": request, 
-            "filename": os.path.basename(wav_file_path),
-        })
-    raise HTTPException(status_code=400, detail="File conversion failed.")
+            #File Size[Unit testing]
+            if file.size > max_size:
+                raise HTTPException(status_code=400, detail=f"File is too large: {file.filename}. Max file size is 5MB.")
 
-#Add download option to download a file on webpage[Currently works with WAV]
-@app.get("/download/{filename}")
-async def download_file(filename: str):
-    file_path = os.path.join(output_path, filename)
-    if os.path.exists(file_path):
-        return FileResponse(file_path, media_type='audio/wav', filename=os.path.basename(file_path))
-    else:
-        raise HTTPException(status_code=404, detail="File not found")
+            #Save the file to directory so it can be converted
+            file_path = os.path.join(output_path, f"uploaded_{file.filename}")
+            with open(file_path, "wb") as f:
+                content = await file.read()
+                f.write(content)
+            filenames.append(file.filename)
+
+        return {"filenames": filenames, "message": "Files uploaded successfully"}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Upload failed: {str(e)}")
