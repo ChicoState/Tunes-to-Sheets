@@ -38,8 +38,14 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
 
-# Switch to the non-privileged user to run the application.
-USER appuser
+# Set Numba cache directory to avoid permission issues.
+ENV NUMBA_CACHE_DIR=/tmp/
+
+# Install LilyPond.
+RUN apt-get update && apt-get install -y lilypond
+
+# Switch to root. It's a server, so it's fine.
+USER root
 
 # Copy the source code into the container.
 COPY . .
