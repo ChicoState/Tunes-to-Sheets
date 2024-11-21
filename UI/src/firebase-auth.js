@@ -4,7 +4,7 @@ import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBzSZYjkmHk9qGHfBWj2M5L888yrXFYc-I",
-    authDomain: "YOUR_AUTH_DOMAIN",
+    // authDomain: "YOUR_AUTH_DOMAIN",
     projectId: "tune2sheets",
     // storageBucket: "YOUR_STORAGE_BUCKET",
     // messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
