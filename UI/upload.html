@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="src/main.css">
+    <title>Upload Audio</title>
+    <script type="module" src="main.js" defer></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Header -->
+      <header class="header">
+        <div class="logo">🎶 Tunes-to-Sheets 🎶</div>
+        <nav class="nav">
+          <ul class="nav-menu">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="#login" class="login-btn">Login</a></li>
+          </ul>
+          <div class="hamburger-menu">☰</div>
+        </nav>
+      </header>
+
+      <!-- Upload Section -->
+      <section class="upload">
+        <h1>Upload Your Audio File</h1>
+        <!--Upload file-->
+        <form id="uploadForm" enctype="multipart/form-data">
+          <label for="fileInput">Choose an audio file (MP3, WAV, MIDI):</label>
+          <input type="file" id="fileInput" name="file" accept="audio/*" required multiple>
+          <button type="submit">Upload</button>
+        </form>
+        <div id="uploadResult"></div> <!-- Display success or failure message here -->
+      </section>
+
+      <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">🎶 Tunes-to-Sheets 🎶</div>
+            <p>&copy; 2024 Tunes-to-Sheets. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
