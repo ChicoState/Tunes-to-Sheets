@@ -7,7 +7,7 @@ import os
 PPQ = 96 # Pulses per quarter note.
 
 def freq_to_midi(freq: float) -> int:
-	return int(12 * (np.log(freq / 220.0) / np.log(2.0)) + 57) # Treat this as black magic
+	return int(round(12 * (np.log(freq / 220.0) / np.log(2.0)) + 57, 0)) # Treat this as black magic
 
 
 # Returns audio features as ordered tuple (notes, onsets, durations, silence durations)
