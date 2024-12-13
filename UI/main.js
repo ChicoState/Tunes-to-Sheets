@@ -3,14 +3,14 @@ import { auth } from './src/firebase-auth.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 
 
-const signUp = async (email, password) => {
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-    // Handle successful sign-up
-  } catch (error) {
-    // Handle Errors
-  }
-};
+// const signUp = async (email, password) => {
+//   try {
+//     await createUserWithEmailAndPassword(auth, email, password);
+//     // Handle successful sign-up
+//   } catch (error) {
+//     // Handle Errors
+//   }
+// };
 
 
 // Selecting elements
