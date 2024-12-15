@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="src/main.css">
+    <title>View Music Sheet</title>
+    <script type="module" src="main.js" defer></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Header -->
+      <header class="header">
+        <div class="logo">🎶 Tunes-to-Sheets 🎶</div>
+        <nav class="nav">
+          <ul class="nav-menu">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="#login" class="login-btn">Login</a></li>
+          </ul>
+          <div class="hamburger-menu">☰</div>
+        </nav>
+      </header>
+
+      <!--Display Section -->
+      <section class="upload">
+        <h1>View your uploaded Audio File</h1>
+	<!-- Placeholder box for PDF display -->
+        <div id="pdf" style="width: 100%; height: 500px; border: 2px dashed #ccc; text-align: center; padding-top: 50px;">
+          <p>PDF will be displayed here once it's generated.</p>
+        </div>
+
+        <script>
+            const urlParams = new URLSearchParams(window.location.search);
+            const filename = urlParams.get('filename');
+            if(filename){
+                document.getElementById('pdf').innerHTML = `
+                    <p>You uploaded: ${filename}</p>
+                    <p>PDF is being processed, please wait...</p>
+                    <p>Once the PDF is ready, it will be displayed here.</p>
+                `;
+            }else{
+                document.getElementById('pdf').innerText = "No file uploaded.";
+            }
+        </script>
+      </section>
+
+      <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">🎶 Tunes-to-Sheets 🎶</div>
+            <p>&copy; 2024 Tunes-to-Sheets. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
