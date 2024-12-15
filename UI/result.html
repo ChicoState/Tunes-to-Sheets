@@ -5,7 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="src/main.css">
-    <title>Upload Audio</title>
+    <title>View Music Sheet</title>
     <script type="module" src="main.js" defer></script>
   </head>
   <body>
@@ -26,16 +26,27 @@
         </nav>
       </header>
 
-      <!-- Upload Section -->
+      <!--Display Section -->
       <section class="upload">
-        <h1>Upload Your Audio File</h1>
-        <!--Upload file-->
-        <form id="uploadForm" enctype="multipart/form-data">
-          <label for="fileInput">Choose an audio file (MP3, WAV, MIDI):</label>
-          <input type="file" id="fileInput" name="file" accept="audio/*" required multiple>
-          <button type="submit">Upload</button>
-        </form>
-        <div id="uploadResult"></div> <!-- Display success or failure message here -->
+        <h1>View your uploaded Audio File</h1>
+	<!-- Placeholder box for PDF display -->
+        <div id="pdf" style="width: 100%; height: 500px; border: 2px dashed #ccc; text-align: center; padding-top: 50px;">
+          <p>PDF will be displayed here once it's generated.</p>
+        </div>
+
+        <script>
+            const urlParams = new URLSearchParams(window.location.search);
+            const filename = urlParams.get('filename');
+            if(filename){
+                document.getElementById('pdf').innerHTML = `
+                    <p>You uploaded: ${filename}</p>
+                    <p>PDF is being processed, please wait...</p>
+                    <p>Once the PDF is ready, it will be displayed here.</p>
+                `;
+            }else{
+                document.getElementById('pdf').innerText = "No file uploaded.";
+            }
+        </script>
       </section>
 
       <footer class="footer">
@@ -45,6 +56,5 @@
         </div>
       </footer>
     </div>
-    <script type="module" src="main.js" defer></script>
   </body>
 </html>
