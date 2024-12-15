@@ -1,10 +1,13 @@
 #File Service Backend
 #Import the necessary libraries of fastapi, file import
 from fastapi import FastAPI, File, UploadFile, Depends, status, HTTPException, Request
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 #Library for the communication between ports
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import requests
+import shutil
+import sys
 from typing import List
 
 #Activates instance and set up format using FastAPI
@@ -46,8 +49,9 @@ async def upload_files(files: List[UploadFile] = File(...)):
                 content = await file.read()
                 f.write(content)
             filenames.append(file.filename)
-
-        return {"filenames": filenames, "message": "Files uploaded successfully"}
+        #Send first file name 
+        return {"filename": filenames[0], "message": "Files uploaded successfully"}
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Upload failed: {str(e)}")
+
